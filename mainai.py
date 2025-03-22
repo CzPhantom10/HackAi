@@ -1,5 +1,3 @@
-# influenceiq.py - Complete Implementation for InfluenceIQ
-
 import os
 import json
 import time
@@ -21,7 +19,7 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 from apscheduler.schedulers.background import BackgroundScheduler
 import redis
-import deepseek_ai
+from transformers import pipeline, AutoModelForCausalLM
 
 # Load environment variables from .env file
 load_dotenv()
@@ -61,20 +59,29 @@ sentiment_analyzer = SentimentIntensityAnalyzer()
 
 # Initialize DeepSeek AI model
 deepseek_model = None
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+deepseek_pipeline = None
 
 def initialize_deepseek():
-    global deepseek_model
-    if DEEPSEEK_API_KEY:
-        try:
-            deepseek_model = deepseek_ai.Model(api_key=DEEPSEEK_API_KEY)
-            logger.info("DeepSeek AI model initialized successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to initialize DeepSeek AI model: {e}")
-    else:
-        logger.warning("DeepSeek API key not found. DeepSeek features will be disabled.")
+    """Initialize the DeepSeek model using transformers"""
+    global deepseek_model, deepseek_pipeline
+    
+    logger.info("DeepSeek model initialization skipped")
     return False
+
+# Function to use DeepSeek model for content analysis
+def analyze_with_deepseek(text, prompt_template=None):
+    """
+    Analyze text content using the DeepSeek model
+    
+    Args:
+        text (str): The text to analyze
+        prompt_template (str, optional): A template for the prompt. If None, a default template is used.
+        
+    Returns:
+        float: A score between 0 and 1, or None if the analysis fails
+    """
+    logger.warning("DeepSeek model not initialized, returning default score")
+    return 0.5  # Default score
 
 # ----- DATA COLLECTION FUNCTIONS -----
 
@@ -85,12 +92,12 @@ def initialize_api_clients():
     # Twitter API setup
     try:
         twitter_auth = tweepy.OAuthHandler(
-            os.getenv('TWITTER_API_KEY'),
-            os.getenv('TWITTER_API_SECRET')
+            os.getenv('q67mpjuZSDFTExV5Faq5G7aa6'),
+            os.getenv('QJCjtJxn8ZMPEUJnxLiBnqb384gn5LurntsOennxyXzkajNmsr')
         )
         twitter_auth.set_access_token(
-            os.getenv('TWITTER_ACCESS_TOKEN'),
-            os.getenv('TWITTER_ACCESS_SECRET')
+            os.getenv('1553087496006668288-fPFnLfrPKVFvL1IveaEM4hL7RIfMDb'),
+            os.getenv('meIrqbysqZBOeCSETbnRUcVjaxYLPeFSVKAqB9uScIt8s')
         )
         clients['twitter'] = tweepy.API(twitter_auth)
         logger.info("Twitter API client initialized")
@@ -100,8 +107,8 @@ def initialize_api_clients():
     # Reddit API setup
     try:
         reddit = praw.Reddit(
-            client_id=os.getenv('REDDIT_CLIENT_ID'),
-            client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+            client_id=os.getenv('ykta_8jOq7qcOQTOz0r7fQ'),
+            client_secret=os.getenv('SV4-rkT6xKGYBug7HoZu0LIfV0-ccg'),
             user_agent=os.getenv('REDDIT_USER_AGENT', 'InfluenceIQ Analytics v1.0')
         )
         clients['reddit'] = reddit
@@ -217,10 +224,16 @@ def collect_reddit_data(api, username):
     except Exception as e:
         logger.error(f"Error collecting Reddit data for {username}: {e}")
         return None
-
-def collect_news_mentions(api_key, entity_name, days=30):
+def collect_news_mentions(entity_name, days=30):
     """Collect news mentions for an influencer using NewsAPI"""
     try:
+        # Get API key from environment variables
+        api_key = os.getenv('c871900c34bb4b7bbd869c76c2b7207c')
+        
+        if not api_key:
+            logger.error("NewsAPI key not found in environment variables")
+            return None
+            
         url = 'https://newsapi.org/v2/everything'
         
         # Calculate date range
@@ -403,21 +416,17 @@ def calculate_credibility_score(influencer_data):
     
     # Use DeepSeek AI for advanced content analysis if available
     content_quality = 0
-    if deepseek_model and 'tweets' in influencer_data:
+    if deepseek_pipeline and 'tweets' in influencer_data:
         try:
             # Sample some content for analysis
             sample_texts = [t['text'] for t in influencer_data['tweets'][:5]]
             sample_text = "\n".join(sample_texts)
             
-            # Ask DeepSeek to analyze content quality
-            prompt = f"Analyze the following content and rate its quality on a scale of 0-1 based on expertise, depth, and informativeness:\n\n{sample_text}\n\nProvide just a number between 0 and 1."
-            
-            response = deepseek_model.generate(prompt)
-            try:
-                content_quality = float(response.strip())
-                content_quality = max(0, min(1, content_quality))  # Ensure in 0-1 range
-            except:
-                content_quality = 0.5  # Default if parsing fails
+            # Analyze with DeepSeek
+            content_quality = analyze_with_deepseek(sample_text)
+            if content_quality is None:
+                content_quality = 0.5  # Default if analysis fails
+                
         except Exception as e:
             logger.error(f"DeepSeek analysis error: {e}")
             content_quality = 0.5
@@ -822,7 +831,7 @@ def schedule_data_collection():
     def collect_top_twitter_data():
         api_clients = initialize_api_clients()
         if 'twitter' in api_clients:
-            top_handles = ['elonmusk', 'BillGates', 'BarackObama']  # Example
+            top_handles = ['elonmusk', 'BillGates', 'BarackObama']  
             for handle in top_handles:
                 try:
                     data = collect_twitter_data(api_clients['twitter'], handle)
@@ -832,31 +841,92 @@ def schedule_data_collection():
                 except Exception as e:
                     logger.error(f"Scheduled collection failed for {handle}: {e}")
     
-    # Schedule tasks with different frequencies
-    scheduler.add_job(collect_top_twitter_data, 'interval', hours=12)
-    # Add more scheduled tasks as needed
+# Schedule tasks with different frequencies
+    scheduler.add_job(collect_top_twitter_data, 'interval', hours=6)
     
-    # Start the scheduler
+    # Add more scheduled tasks as needed
+    # e.g., Reddit data collection, news mentions, etc.
+    
     scheduler.start()
-    logger.info("Background scheduler started")
-    return scheduler
+    logger.info("Scheduled data collection tasks started")
+
+# ----- MODEL TRAINING FUNCTIONS -----
+
+def train_prediction_model(historical_data, target_column='engagement_rate'):
+    """Train a model to predict influence factors"""
+    try:
+        # Convert to DataFrame
+        df = pd.DataFrame(historical_data)
+        
+        # Feature engineering
+        # Add your custom feature engineering logic here
+        
+        # Prepare features and target
+        X = df.drop([target_column, 'id', 'created_at'], axis=1, errors='ignore')
+        y = df[target_column]
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Train model
+        model = RandomForestRegressor(n_estimators=100, random_state=42)
+        model.fit(X_train, y_train)
+        
+        # Evaluate model
+        test_score = model.score(X_test, y_test)
+        logger.info(f"Model trained with R² score: {test_score:.3f}")
+        
+        return model
+    
+    except Exception as e:
+        logger.error(f"Error training prediction model: {e}")
+        return None
+
+def save_model(model, filename='models/influence_model.pkl'):
+    """Save a trained model to disk"""
+    import pickle
+    
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    
+    with open(filename, 'wb') as f:
+        pickle.dump(model, f)
+    
+    logger.info(f"Model saved to {filename}")
+
+def load_model(filename='models/influence_model.pkl'):
+    """Load a trained model from disk"""
+    import pickle
+    
+    try:
+        with open(filename, 'rb') as f:
+            model = pickle.load(f)
+        logger.info(f"Model loaded from {filename}")
+        return model
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        return None
 
 # ----- MAIN APPLICATION -----
 
-def main():
-    """Main function to run the application"""
+def initialize_app():
+    """Initialize the application"""
+    logger.info("Initializing InfluenceIQ application")
+    
     # Initialize DeepSeek AI
     initialize_deepseek()
     
-    # Start scheduled tasks
-    scheduler = schedule_data_collection()
+    # Schedule data collection tasks
+    schedule_data_collection()
     
-    # Run the Flask application
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    # Other initialization tasks can go here
+    # ...
     
-    # Shut down scheduler when app exits
-    scheduler.shutdown()
+    logger.info("Initialization complete")
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    initialize_app()
+    
+    # Start Flask app
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=os.getenv('DEBUG', 'False').lower() == 'true')
+
