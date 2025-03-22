@@ -277,10 +277,16 @@ def collect_reddit_data(api, username):
     except Exception as e:
         logger.error(f"Error collecting Reddit data for {username}: {e}")
         return None
-
-def collect_news_mentions(api_key, entity_name, days=30):
+def collect_news_mentions(entity_name, days=30):
     """Collect news mentions for an influencer using NewsAPI"""
     try:
+        # Get API key from environment variables
+        api_key = os.getenv('c871900c34bb4b7bbd869c76c2b7207c')
+        
+        if not api_key:
+            logger.error("NewsAPI key not found in environment variables")
+            return None
+            
         url = 'https://newsapi.org/v2/everything'
         
         # Calculate date range
