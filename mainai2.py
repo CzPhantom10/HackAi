@@ -145,12 +145,12 @@ def initialize_api_clients():
     # Twitter API setup
     try:
         twitter_auth = tweepy.OAuthHandler(
-            os.getenv('TWITTER_API_KEY'),
-            os.getenv('TWITTER_API_SECRET')
+            os.getenv('q67mpjuZSDFTExV5Faq5G7aa6'),
+            os.getenv('QJCjtJxn8ZMPEUJnxLiBnqb384gn5LurntsOennxyXzkajNmsr')
         )
         twitter_auth.set_access_token(
-            os.getenv('TWITTER_ACCESS_TOKEN'),
-            os.getenv('TWITTER_ACCESS_SECRET')
+            os.getenv('1553087496006668288-fPFnLfrPKVFvL1IveaEM4hL7RIfMDb'),
+            os.getenv('meIrqbysqZBOeCSETbnRUcVjaxYLPeFSVKAqB9uScIt8s')
         )
         clients['twitter'] = tweepy.API(twitter_auth)
         logger.info("Twitter API client initialized")
