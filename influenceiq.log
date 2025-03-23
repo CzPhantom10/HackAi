@@ -96,3 +96,8 @@
 2025-03-23 18:20:00,708 - __main__ - INFO - Initializing G4F client...
 2025-03-23 18:20:00,709 - __main__ - INFO - G4F client initialized successfully
 2025-03-23 18:20:00,709 - __main__ - INFO - Initialization complete
+2025-03-23 18:26:29,552 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 18:26:30,077 - __main__ - INFO - Initializing Infame application
+2025-03-23 18:26:30,077 - __main__ - INFO - Initializing G4F client...
+2025-03-23 18:26:30,077 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 18:26:30,077 - __main__ - INFO - Initialization complete
