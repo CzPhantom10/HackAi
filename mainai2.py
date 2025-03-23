@@ -113,7 +113,7 @@ def initialize_api_clients():
         reddit = praw.Reddit(
             client_id=os.getenv('REDDIT_CLIENT_ID', 'ykta_8jOq7qcOQTOz0r7fQ'),
             client_secret=os.getenv('REDDIT_CLIENT_SECRET', 'SV4-rkT6xKGYBug7HoZu0LIfV0-ccg'),
-            user_agent=os.getenv('REDDIT_USER_AGENT', 'InfluenceIQ Analytics v1.0')
+            user_agent=os.getenv('REDDIT_USER_AGENT', 'Infame Analytics v1.0')
         )
         clients['reddit'] = reddit
         logger.info("Reddit API client initialized")
@@ -957,7 +957,7 @@ def display_influencer_card(influencer):
         st.markdown("*overall score*")
 
 def initialize_app():
-    logger.info("Initializing InfluenceIQ application")
+    logger.info("Initializing Infame application")
     initialize_g4f_client()
     logger.info("Initialization complete")
 
@@ -1211,7 +1211,7 @@ def main():
             st.warning("Please enter a handle to analyze")
 
     st.markdown("---")
-    st.markdown("InfluenceIQ - Analytics for identifying authentic online influence")
+    st.markdown("Infame - Analytics for identifying authentic online influence")
 
 if __name__ == "__main__":
     main()

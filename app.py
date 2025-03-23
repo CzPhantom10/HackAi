@@ -182,9 +182,9 @@ def handle_submit():
         st.session_state.last_processed_input = input_text
         st.session_state.messages.append({"role": "user", "content": input_text})
         st.session_state.user_text = ""
-        with st.spinner("InfluenceIQ Assistant is thinking..."):
+        with st.spinner("Infame Assistant is thinking..."):
             context = """
-            InfluenceIQ is an AI-powered system that ranks who really matters in the digital world.
+            Infame is an AI-powered system that ranks who really matters in the digital world.
             
             Key Features:
             - Measures credibility & trustworthiness in a person's field
@@ -192,7 +192,7 @@ def handle_submit():
             - Analyzes meaningful engagement (positive influence vs. just trending)
             - Creates fair ratings that distinguish consistent achievers from short-term viral hits
             
-            Key Challenges InfluenceIQ Addresses:
+            Key Challenges Infame Addresses:
             - Fighting fake fame by preventing spam reviews and manipulative ratings
             - Balancing recent buzz with established legacy when measuring influence
             - Providing real-time ratings that adapt with trends while staying credible
@@ -205,7 +205,7 @@ def handle_submit():
             - Offers a dynamic rating system that evolves with changing times
             """
         
-            prompt = f"User asked about InfluenceIQ: '{input_text}'\n\nInformation about InfluenceIQ:\n{context}\n\nProvide a helpful, conversational response to the user's query as the InfluenceIQ chatbot. Keep responses concise, informative, and engaging."
+            prompt = f"User asked about Infame: '{input_text}'\n\nInformation about Infame:\n{context}\n\nProvide a helpful, conversational response to the user's query as the InfameAI chatbot. Keep responses concise, informative, and engaging."
             
             try:
                 response = client.chat.completions.create(
@@ -218,7 +218,7 @@ def handle_submit():
                 bot_response = f"I'm sorry, I encountered an error: {str(e)}. Please try again later."
         st.session_state.messages.append({"role": "assistant", "content": bot_response})
 
-st.markdown("<h1 class='title'>InfluenceIQ</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='title'>InfameAI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>The AI-Powered System That Ranks Who Really Matters!</p>", unsafe_allow_html=True)
 
 st.markdown("<hr style='margin: 0.5rem 0; border-color: #333333;'>", unsafe_allow_html=True)
@@ -232,7 +232,7 @@ with col1:
         st.markdown(
             """
             <div class='bot-message'>
-                <strong>InfluenceIQ Assistant:</strong> Hi! I'm your InfluenceIQ assistant. 
+                <strong>Infame AI Assistant:</strong> Hi! I'm your InfameAI assistant. 
                 How can I help you understand our AI-powered influence ranking system?
             </div>
             """, 
@@ -247,7 +247,7 @@ with col1:
             )
         else:
             st.markdown(
-                f"<div class='bot-message'><strong>InfluenceIQ Assistant:</strong> {message['content']}</div>", 
+                f"<div class='bot-message'><strong>InfameAI Assistant:</strong> {message['content']}</div>", 
                 unsafe_allow_html=True
             )
     with st.form(key="chat_form", clear_on_submit=True):
@@ -255,9 +255,9 @@ with col1:
             st.session_state.user_text = ""
         
         st.text_input(
-            "Ask about InfluenceIQ:", 
+            "Ask about Infame:", 
             key="user_text", 
-            placeholder="e.g., How does InfluenceIQ measure credibility?"
+            placeholder="e.g., How does Infame measure credibility?"
         )
         
         submit_button = st.form_submit_button(
@@ -339,7 +339,7 @@ with col2:
 st.markdown(
     """
     <div class="footer">
-        InfluenceIQ © 2025 | Redefining fame—fairly, intelligently, and transparently
+        Infame © 2025 | Redefining fame—fairly, intelligently, and transparently
     </div>
     """, 
     unsafe_allow_html=True
