@@ -10,3 +10,6 @@ praw
 nltk 
 apscheduler 
 redis
+deepseek_ai
+g4f[all]
+streamlit
