@@ -53,3 +53,41 @@
 2025-03-23 15:14:31,958 - __main__ - INFO - Initializing G4F client...
 2025-03-23 15:14:31,958 - __main__ - INFO - G4F client initialized successfully
 2025-03-23 15:14:31,959 - __main__ - INFO - Initialization complete
+2025-03-23 16:24:17,315 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 16:24:17,960 - __main__ - INFO - Initializing InfluenceIQ application
+2025-03-23 16:24:17,960 - __main__ - INFO - Initializing G4F client...
+2025-03-23 16:24:17,962 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 16:24:17,962 - __main__ - INFO - Initialization complete
+2025-03-23 17:53:12,080 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 17:53:12,666 - __main__ - INFO - Initializing InfluenceIQ application
+2025-03-23 17:53:12,666 - __main__ - INFO - Initializing G4F client...
+2025-03-23 17:53:12,668 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 17:53:12,668 - __main__ - INFO - Initialization complete
+2025-03-23 17:57:13,726 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 17:57:14,337 - __main__ - INFO - Initializing InfluenceIQ application
+2025-03-23 17:57:14,337 - __main__ - INFO - Initializing G4F client...
+2025-03-23 17:57:14,338 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 17:57:14,338 - __main__ - INFO - Initialization complete
+2025-03-23 18:10:19,173 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 18:10:19,741 - __main__ - INFO - Initializing InfluenceIQ application
+2025-03-23 18:10:19,741 - __main__ - INFO - Initializing G4F client...
+2025-03-23 18:10:19,742 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 18:10:19,743 - __main__ - INFO - Initialization complete
+2025-03-23 18:10:37,921 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 18:10:37,926 - __main__ - INFO - Initializing InfluenceIQ application
+2025-03-23 18:10:37,926 - __main__ - INFO - Initializing G4F client...
+2025-03-23 18:10:37,926 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 18:10:37,926 - __main__ - INFO - Initialization complete
+2025-03-23 18:10:37,985 - __main__ - INFO - Twitter API client initialized
+2025-03-23 18:10:38,045 - __main__ - INFO - Reddit API client initialized
+2025-03-23 18:10:38,340 - __main__ - ERROR - Error collecting Twitter data for BeastBoySubh: 403 Forbidden
+453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
+2025-03-23 18:10:38,350 - __main__ - INFO - Twitter API client initialized
+2025-03-23 18:10:38,350 - __main__ - INFO - Reddit API client initialized
+2025-03-23 18:10:38,627 - __main__ - ERROR - Error collecting Twitter data for BeastBoySubh: 403 Forbidden
+453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
+2025-03-23 18:18:21,084 - __main__ - WARNING - Redis server not available. Caching will be disabled.
+2025-03-23 18:18:21,629 - __main__ - INFO - Initializing Infame application
+2025-03-23 18:18:21,631 - __main__ - INFO - Initializing G4F client...
+2025-03-23 18:18:21,631 - __main__ - INFO - G4F client initialized successfully
+2025-03-23 18:18:21,631 - __main__ - INFO - Initialization complete
