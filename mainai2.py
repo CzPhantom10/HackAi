@@ -972,7 +972,7 @@ def main():
 
     col1, col2 = st.columns([3, 2])
     with col1:
-        st.title("InfluenceIQ")
+        st.title("Infame")
     with col2:
         search_query = st.text_input("", placeholder="Search for an influencer...")
 
