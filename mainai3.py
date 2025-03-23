@@ -32,6 +32,8 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# Initialize Redis client with proper error handling
 try:
     redis_client = redis.Redis(
         host=os.getenv('REDIS_HOST', 'localhost'),
@@ -47,8 +49,12 @@ except redis.ConnectionError:
 except Exception as e:
     logger.warning(f"Redis error: {e}. Caching will be disabled.")
     redis_client = None
+
+# Initialize NLTK resources
 nltk.download('vader_lexicon', quiet=True)
 sentiment_analyzer = SentimentIntensityAnalyzer()
+
+# Initialize G4F client
 g4f_client = None
 
 def initialize_g4f_client():
@@ -81,6 +87,8 @@ def analyze_with_g4f(text, prompt_template=None):
         )
         
         response_text = response.choices[0].message.content
+        
+        # Parse the response to extract the score
         numeric_match = re.search(r"(\d+\.\d+|\d+)", response_text)
         if numeric_match:
             score = float(numeric_match.group(1))
@@ -95,6 +103,8 @@ def analyze_with_g4f(text, prompt_template=None):
 
 def initialize_api_clients():
     clients = {}
+    
+    # Initialize Twitter API (using API v1.1)
     try:
         twitter_auth = tweepy.OAuthHandler(
             os.getenv('TWITTER_API_KEY', 'q67mpjuZSDFTExV5Faq5G7aa6'),
@@ -124,15 +134,18 @@ def initialize_api_clients():
 
 def collect_twitter_data(api, influencer_handle):
     try:
+        # Get user info using Twitter API v2
         user = api.get_user(screen_name=influencer_handle, tweet_mode='extended')
-
+        
+        # Get user's tweets (use correct Twitter API v2 method)
         tweets = api.user_timeline(
             screen_name=influencer_handle,
             count=100,
             tweet_mode='extended',
             include_rts=False
         )
-
+        
+        # Get mentions
         mentions = api.search_tweets(
             q=f"@{influencer_handle}", 
             count=100,
@@ -185,6 +198,8 @@ def collect_twitter_data(api, influencer_handle):
 def collect_reddit_data(api, username):
     try:
         user = api.redditor(username)
+        
+        # Check if user exists
         try:
             _ = user.id
         except:
@@ -212,6 +227,8 @@ def collect_reddit_data(api, username):
             'score': comment.score,
             'subreddit': comment.subreddit.display_name
         } for comment in comments]
+        
+        # Fixed: Safely get icon_img attribute
         icon_img = getattr(user, 'icon_img', '') if hasattr(user, 'icon_img') else "https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png"
         
         return {
@@ -231,6 +248,7 @@ def collect_reddit_data(api, username):
 
 def collect_news_mentions(entity_name, days=30):
     try:
+        # Fixed: Use proper environment variable
         api_key = os.getenv('NEWS_API_KEY', 'c871900c34bb4b7bbd869c76c2b7207c')
         
         if not api_key:
@@ -449,6 +467,7 @@ def calculate_longevity_score(time_series_data):
         
         if 'created_at' in df.columns:
             df['date'] = pd.to_datetime(df['created_at'], errors='coerce')
+            # Drop rows with invalid dates
             df = df.dropna(subset=['date'])
         else:
             return 5.0
@@ -512,6 +531,7 @@ def detect_suspicious_activity(user_activity):
         features = []
         
         for activity in user_activity:
+            # Check if all required keys exist
             if not all(k in activity for k in ['time_of_day', 'day_of_week', 'text_length', 'response_time']):
                 continue
                 
@@ -660,6 +680,8 @@ def analyze_influencer(platform, handle, field=None):
     store_data_in_database(influencer_data, f"{platform}_data")
     
     score_data = calculate_overall_influence_score(influencer_data, field)
+    
+    # Added profile_image_url to result
     profile_image_url = influencer_data.get('profile', {}).get('profile_image_url', '')
     
     result = {
@@ -685,247 +707,55 @@ def analyze_influencer(platform, handle, field=None):
     
     return result
 
-def get_real_top_influencers(field=None, limit=10):
-    """
-    Returns real influencer data based on field category.
+def get_mock_top_influencers(field=None, limit=10):
+    mock_top_influencers = [
+        {
+            'platform': 'twitter',
+            'handle': 'techleader',
+            'name': 'Jane Smith',
+            'field': 'tech_entrepreneur',
+            'overall_score': 9.0,
+            'component_scores': {
+                'credibility': 9.2,
+                'longevity': 8.7,
+                'engagement': 9.0
+            },
+            'profile_image_url': 'https://randomuser.me/api/portraits/women/44.jpg'
+        },
+        {
+            'platform': 'twitter',
+            'handle': 'contentmaster',
+            'name': 'John Doe',
+            'field': 'content_creator',
+            'overall_score': 8.2,
+            'component_scores': {
+                'credibility': 8.5,
+                'longevity': 7.2,
+                'engagement': 8.7
+            },
+            'profile_image_url': 'https://randomuser.me/api/portraits/men/32.jpg'
+        },
+        {
+            'platform': 'twitter',
+            'handle': 'sportsstar',
+            'name': 'Alex Johnson',
+            'field': 'athlete',
+            'overall_score': 9.4,
+            'component_scores': {
+                'credibility': 9.7,
+                'longevity': 8.9,
+                'engagement': 9.5
+            },
+            'profile_image_url': 'https://randomuser.me/api/portraits/men/22.jpg'
+        }
+    ]
     
-    Args:
-        field (str, optional): The field/category to filter by
-        limit (int, optional): Maximum number of influencers to return
-        
-    Returns:
-        list: A list of influencer dictionaries
-    """
-    real_influencers = {
-        # Tech Entrepreneurs
-        'tech_entrepreneur': [
-            {
-                'platform': 'twitter',
-                'handle': 'elonmusk',
-                'name': 'Elon Musk',
-                'field': 'tech_entrepreneur',
-                'overall_score': 9.5,
-                'component_scores': {
-                    'credibility': 9.2,
-                    'longevity': 8.8,
-                    'engagement': 9.8
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/800px-Elon_Musk_Royal_Society_%28crop2%29.jpg'
-            },
-            {
-                'platform': 'twitter',
-                'handle': 'pmarca',
-                'name': 'Marc Andreessen',
-                'field': 'tech_entrepreneur',
-                'overall_score': 8.9,
-                'component_scores': {
-                    'credibility': 9.0,
-                    'longevity': 9.1,
-                    'engagement': 8.5
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Marc_Andreessen_2023.png'
-            },
-            {
-                'platform': 'twitter',
-                'handle': 'naval',
-                'name': 'Naval Ravikant',
-                'field': 'tech_entrepreneur',
-                'overall_score': 8.8,
-                'component_scores': {
-                    'credibility': 9.1,
-                    'longevity': 8.4,
-                    'engagement': 8.7
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Naval_Ravikant_at_Blockcon_2018_%28cropped%29.jpeg/800px-Naval_Ravikant_at_Blockcon_2018_%28cropped%29.jpeg'
-            }
-        ],
-        
-        # Content Creators
-        'content_creator': [
-            {
-                'platform': 'youtube',
-                'handle': 'MrBeast',
-                'name': 'Jimmy Donaldson',
-                'field': 'content_creator',
-                'overall_score': 9.4,
-                'component_scores': {
-                    'credibility': 8.9,
-                    'longevity': 9.2,
-                    'engagement': 9.8
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/MrBeast_at_CCXP_%28cropped%29.png/800px-MrBeast_at_CCXP_%28cropped%29.png'
-            },
-            {
-                'platform': 'instagram',
-                'handle': 'emmachamberlain',
-                'name': 'Emma Chamberlain',
-                'field': 'content_creator',
-                'overall_score': 8.7,
-                'component_scores': {
-                    'credibility': 8.3,
-                    'longevity': 8.5,
-                    'engagement': 9.2
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Emma_Chamberlain_2019_by_Glenn_Francis.jpg/800px-Emma_Chamberlain_2019_by_Glenn_Francis.jpg'
-            },
-            {
-                'platform': 'tiktok',
-                'handle': 'charlidamelio',
-                'name': 'Charli D\'Amelio',
-                'field': 'content_creator',
-                'overall_score': 8.6,
-                'component_scores': {
-                    'credibility': 7.9,
-                    'longevity': 8.2,
-                    'engagement': 9.6
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Charli_D%27Amelio_in_September_2023.jpg/800px-Charli_D%27Amelio_in_September_2023.jpg'
-            }
-        ],
-        
-        # Athletes
-        'athlete': [
-            {
-                'platform': 'instagram',
-                'handle': 'cristiano',
-                'name': 'Cristiano Ronaldo',
-                'field': 'athlete',
-                'overall_score': 9.7,
-                'component_scores': {
-                    'credibility': 9.5,
-                    'longevity': 9.8,
-                    'engagement': 9.8
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg/800px-Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%28cropped%29.jpg'
-            },
-            {
-                'platform': 'instagram',
-                'handle': 'leomessi',
-                'name': 'Lionel Messi',
-                'field': 'athlete',
-                'overall_score': 9.6,
-                'component_scores': {
-                    'credibility': 9.6,
-                    'longevity': 9.7,
-                    'engagement': 9.5
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_20180626.jpg/800px-Lionel_Messi_20180626.jpg'
-            },
-            {
-                'platform': 'instagram',
-                'handle': 'kingjames',
-                'name': 'LeBron James',
-                'field': 'athlete',
-                'overall_score': 9.5,
-                'component_scores': {
-                    'credibility': 9.3,
-                    'longevity': 9.6,
-                    'engagement': 9.5
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/LeBron_James_crop.jpg/800px-LeBron_James_crop.jpg'
-            }
-        ],
-        
-        # Musicians
-        'musician': [
-            {
-                'platform': 'instagram',
-                'handle': 'taylorswift',
-                'name': 'Taylor Swift',
-                'field': 'musician',
-                'overall_score': 9.6,
-                'component_scores': {
-                    'credibility': 9.3,
-                    'longevity': 9.7,
-                    'engagement': 9.8
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Taylor_Swift_at_the_2023_MTV_Video_Music_Awards.jpg/800px-Taylor_Swift_at_the_2023_MTV_Video_Music_Awards.jpg'
-            },
-            {
-                'platform': 'instagram',
-                'handle': 'badgalriri',
-                'name': 'Rihanna',
-                'field': 'musician',
-                'overall_score': 9.3,
-                'component_scores': {
-                    'credibility': 9.1,
-                    'longevity': 9.5,
-                    'engagement': 9.2
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Rihanna_Fenty_2018.png/800px-Rihanna_Fenty_2018.png'
-            },
-            {
-                'platform': 'instagram',
-                'handle': 'drake',
-                'name': 'Drake',
-                'field': 'musician',
-                'overall_score': 9.2,
-                'component_scores': {
-                    'credibility': 8.8,
-                    'longevity': 9.3,
-                    'engagement': 9.4
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Drake_July_2016.jpg/800px-Drake_July_2016.jpg'
-            }
-        ],
-        
-        # Academics
-        'academic': [
-            {
-                'platform': 'twitter',
-                'handle': 'neiltyson',
-                'name': 'Neil deGrasse Tyson',
-                'field': 'academic',
-                'overall_score': 9.2,
-                'component_scores': {
-                    'credibility': 9.7,
-                    'longevity': 8.9,
-                    'engagement': 8.8
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Neil_deGrasse_Tyson_2017.jpg/800px-Neil_deGrasse_Tyson_2017.jpg'
-            },
-            {
-                'platform': 'twitter',
-                'handle': 'BrianCox',
-                'name': 'Brian Cox',
-                'field': 'academic',
-                'overall_score': 8.9,
-                'component_scores': {
-                    'credibility': 9.5,
-                    'longevity': 8.7,
-                    'engagement': 8.4
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Brian_Cox_at_the_Science_Museum%2C_London%2C_October_2019.jpg/800px-Brian_Cox_at_the_Science_Museum%2C_London%2C_October_2019.jpg'
-            },
-            {
-                'platform': 'twitter',
-                'handle': 'karensnyc',
-                'name': 'Karen Nyberg',
-                'field': 'academic',
-                'overall_score': 8.7,
-                'component_scores': {
-                    'credibility': 9.6,
-                    'longevity': 8.3,
-                    'engagement': 8.0
-                },
-                'profile_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Karen_L._Nyberg.jpg/800px-Karen_L._Nyberg.jpg'
-            }
-        ]
-    }
-
-    all_influencers = []
-    for category_influencers in real_influencers.values():
-        all_influencers.extend(category_influencers)
-
-    all_influencers = sorted(all_influencers, key=lambda x: x['overall_score'], reverse=True)
-
     if field:
-        if field == "all":
-            results = all_influencers[:limit]
-        else:
-            results = real_influencers.get(field, [])[:limit]
+        filtered_influencers = [i for i in mock_top_influencers if i['field'] == field]
     else:
-        results = all_influencers[:limit]
+        filtered_influencers = mock_top_influencers
+    
+    results = filtered_influencers[:limit]
     
     return results
 
@@ -945,7 +775,8 @@ def display_influencer_card(influencer):
         field = influencer.get('field', '')
         if field:
             st.markdown(f"*{field.replace('_', ' ').title()}*")
-
+        
+        # Component scores with icons
         component_scores = influencer.get('component_scores', {})
         st.markdown(f"🔵 Credibility: {component_scores.get('credibility', 0):.1f}/10")
         st.markdown(f"🟢 Longevity: {component_scores.get('longevity', 0):.1f}/10")
@@ -965,17 +796,19 @@ def main():
     initialize_app()
     
     st.set_page_config(
-        page_title="Infame",
+        page_title="InfluenceIQ",
         page_icon="📊",
         layout="wide"
     )
-
+    
+    # Header with search bar
     col1, col2 = st.columns([3, 2])
     with col1:
         st.title("InfluenceIQ")
     with col2:
         search_query = st.text_input("", placeholder="Search for an influencer...")
-
+    
+    # Main content area with sidebar
     st.sidebar.header("Categories")
     categories = ["All Influencers", "Tech Entrepreneurs", "Content Creators", "Athletes", "Musicians", "Academics"]
     selected_category = st.sidebar.radio("", categories)
@@ -983,9 +816,9 @@ def main():
     st.sidebar.header("Filters")
     filter_options = ["Rising Stars", "Legacy Figures"]
     selected_filters = st.sidebar.multiselect("", filter_options)
-
+    
+    # Map selected category to field value
     field_mapping = {
-        "All Influencers": "all",
         "Tech Entrepreneurs": "tech_entrepreneur",
         "Content Creators": "content_creator",
         "Athletes": "athlete",
@@ -993,13 +826,13 @@ def main():
         "Academics": "academic"
     }
     
-    selected_field = field_mapping.get(selected_category, "all")
+    selected_field = field_mapping.get(selected_category, None)
     
     # Main content - Top Influencers
-    st.header(f"Top {selected_category}")
+    st.header("Top Influencers")
     
-    # Get real influencer data
-    influencers = get_real_top_influencers(field=selected_field, limit=3)
+    # Get influencer data
+    influencers = get_mock_top_influencers(field=selected_field)
     
     # Display influencers in a grid
     if influencers:
@@ -1011,121 +844,38 @@ def main():
         st.info("No influencers found")
     
     st.markdown("Click on any profile for detailed influence metrics")
-
+    
+# Handle search functionality
     if search_query:
-        st.subheader(f"Search Results for '{search_query}'")
-        # Default to Twitter search if platform not specified
-        search_parts = search_query.split(':')
-        if len(search_parts) > 1:
-            platform = search_parts[0].lower()
-            handle = search_parts[1].strip()
-        else:
-            platform = 'twitter'
-            handle = search_query.strip()
-        
-        if platform in ['twitter', 'reddit', 'instagram', 'youtube', 'tiktok']:
-            st.info(f"Analyzing {platform} user: {handle}")
-            
-            with st.spinner(f"Analyzing {handle}'s influence..."):
-
-                all_influencers = get_real_top_influencers(limit=100)  # Get a large set to search from
-                found_influencer = next((i for i in all_influencers if i['handle'].lower() == handle.lower() and i['platform'].lower() == platform.lower()), None)
-                
-                if found_influencer:
-                    result = found_influencer
-                else:
-
-                    result = analyze_influencer(platform, handle, field=selected_field)
-            
-            if result:
-                display_influencer_card(result)
-
-                st.subheader("Detailed Analysis")
-
-                tabs = st.tabs(["Overview", "Content Analysis", "Audience Insights"])
-                
-                with tabs[0]:
-                    st.markdown("### Influence Score Components")
-
-                    st.markdown("""
-                    ```
-                    Radar Chart: Showing the balance of different influence factors
-                    - Credibility
-                    - Longevity
-                    - Engagement
-                    - Content Quality
-                    - Audience Reach
-                    ```
-                    """)
-                    
-                    st.markdown("### Key Statistics")
-                    stat_cols = st.columns(3)
-                    
-                    with stat_cols[0]:
-                        st.metric("Followers", f"{result.get('profile', {}).get('followers', 'N/A'):,}")
-                    with stat_cols[1]:
-                        st.metric("Content Consistency", f"{result.get('component_scores', {}).get('longevity', 0)*10:.1f}%")
-                    with stat_cols[2]:
-                        st.metric("Engagement Rate", f"{result.get('component_scores', {}).get('engagement', 0)*10:.1f}%")
-                
-                with tabs[1]:
-                    st.markdown("### Content Performance")
-                    st.line_chart({
-                        "Engagement Rate": [4.2, 4.5, 5.0, 5.5, 5.8, 6.2, 6.8],
-                        "Content Quality": [6.5, 6.3, 6.7, 7.0, 7.2, 7.5, 7.8]
-                    })
-                    
-                    st.markdown("### Popular Content Themes")
-                    themes_cols = st.columns(4)
-                    with themes_cols[0]:
-                        st.markdown("🔵 **Theme 1**\n65% engagement")
-                    with themes_cols[1]:
-                        st.markdown("🟢 **Theme 2**\n58% engagement")
-                    with themes_cols[2]:
-                        st.markdown("🟠 **Theme 3**\n42% engagement")
-                    with themes_cols[3]:
-                        st.markdown("🔴 **Theme 4**\n35% engagement")
-                
-                with tabs[2]:
-                    st.markdown("### Audience Demographics")
-                    demo_cols = st.columns(2)
-                    
-                    with demo_cols[0]:
-                        st.markdown("#### Age Distribution")
-                        st.markdown("""
-                        - 18-24: 35%
-                        - 25-34: 42% 
-                        - 35-44: 15%
-                        - 45+: 8%
-                        """)
-                    
-                    with demo_cols[1]:
-                        st.markdown("#### Geographic Distribution")
-                        st.markdown("""
-                        - United States: 42%
-                        - Europe: 28%
-                        - Asia: 18%
-                        - Other: 12%
-                        """)
-                    
-                    st.markdown("### Audience Interests")
-                    interest_cols = st.columns(3)
-                    with interest_cols[0]:
-                        st.progress(0.82, "Technology")
-                    with interest_cols[1]:
-                        st.progress(0.65, "Business")
-                    with interest_cols[2]:
-                        st.progress(0.48, "Science")
+            st.subheader(f"Search Results for '{search_query}'")
+            # Default to Twitter search if platform not specified
+            search_parts = search_query.split(':')
+            if len(search_parts) > 1:
+                platform = search_parts[0].lower()
+                handle = search_parts[1].strip()
             else:
-                st.error(f"Could not retrieve data for {handle} on {platform}")
-        else:
-            st.error("Supported platforms are Twitter, Reddit, Instagram, YouTube, and TikTok. Use format platform:handle")
-
+                platform = 'twitter'
+                handle = search_query.strip()
+            
+            if platform in ['twitter', 'reddit']:
+                st.info(f"Analyzing {platform} user: {handle}")
+                
+                with st.spinner(f"Analyzing {handle}'s influence..."):
+                    result = analyze_influencer(platform, handle, field=selected_field)
+                
+                if result:
+                    display_influencer_card(result)
+                else:
+                    st.error(f"Could not retrieve data for {handle} on {platform}")
+            else:
+                st.error("Supported platforms are Twitter and Reddit. Use format platform:handle")
+    
+    # Analysis section
     st.header("Analyze New Influencer")
     col1, col2 = st.columns(2)
     
     with col1:
-        new_platform = st.selectbox("Platform", ["Twitter", "Reddit", "Instagram", "YouTube", "TikTok"])
+        new_platform = st.selectbox("Platform", ["Twitter", "Reddit"])
     
     with col2:
         new_handle = st.text_input("Handle", placeholder="Enter username without @")
@@ -1144,19 +894,13 @@ def main():
             platform_value = new_platform.lower()
             
             with st.spinner(f"Analyzing {new_handle}'s influence..."):
-
-                all_influencers = get_real_top_influencers(limit=100)
-                found_influencer = next((i for i in all_influencers if i['handle'].lower() == new_handle.lower() and i['platform'].lower() == platform_value.lower()), None)
-                
-                if found_influencer:
-                    result = found_influencer
-                else:
-                    result = analyze_influencer(platform_value, new_handle, field=field_value)
+                result = analyze_influencer(platform_value, new_handle, field=field_value)
             
             if result:
                 st.success("Analysis complete!")
                 display_influencer_card(result)
-
+                
+                # Display additional metrics
                 st.subheader("Detailed Metrics")
                 
                 component_scores = result.get('component_scores', {})
@@ -1168,48 +912,18 @@ def main():
                     st.metric("Longevity", f"{component_scores.get('longevity', 0):.1f}/10")
                 with metrics_cols[2]:
                     st.metric("Engagement", f"{component_scores.get('engagement', 0):.1f}/10")
-
+                
+                # Placeholder for historical data chart
                 st.subheader("Influence Trend")
-
-                overall_score = result.get('overall_score', 7.5)
-                previous_values = []
-                current_value = max(5.0, overall_score - 2)
-                
-                for _ in range(5):
-                    previous_values.append(current_value)
-
-                    increase = np.random.normal(0.3, 0.15)
-                    current_value = min(10, current_value + increase)
-                
-                previous_values.append(overall_score)
-                
-                trend_data = {
-                    "Influence Score": previous_values
-                }
-                
-                st.line_chart(trend_data)
-
-                st.subheader("Competitor Comparison")
-
-                competitors = [inf for inf in get_real_top_influencers(field=field_value, limit=5) 
-                              if inf['handle'].lower() != new_handle.lower()][:3]
-                
-                if competitors:
-                    comp_data = {
-                        result.get('name', 'Current'): result.get('overall_score', 0)
-                    }
-                    
-                    for comp in competitors:
-                        comp_data[comp.get('name', 'Unknown')] = comp.get('overall_score', 0)
-                    
-                    st.bar_chart(comp_data)
-                else:
-                    st.info("No competitors found for comparison")
+                st.line_chart({
+                    "Influence Score": [5.0, 5.2, 5.8, 6.3, 7.1, result.get('overall_score', 0)]
+                })
             else:
                 st.error(f"Could not retrieve data for {new_handle} on {platform_value}")
         else:
             st.warning("Please enter a handle to analyze")
-
+    
+    # Footer
     st.markdown("---")
     st.markdown("InfluenceIQ - Analytics for identifying authentic online influence")
 

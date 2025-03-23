@@ -1,31 +1,21 @@
 import streamlit as st
 import random
 from g4f.client import Client
-
-# Page configuration
 st.set_page_config(
     page_title="InfameAI",
     page_icon="🌟",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Initialize the client
 @st.cache_resource
 def get_client():
     return Client()
 
 client = get_client()
-
-# Initialize session state for chat history
 if 'messages' not in st.session_state:
     st.session_state.messages = []
-
-# Initialize session state for tracking the last processed input
 if 'last_processed_input' not in st.session_state:
     st.session_state.last_processed_input = ""
-
-# Custom CSS with black background
 st.markdown(
     """
     <style>
@@ -143,7 +133,6 @@ st.markdown(
         border-top: 1px solid #333333;
     }
     
-    /* Streamlit metric styling */
     [data-testid="stMetricValue"] {
         font-size: 1.2rem;
         font-weight: bold;
@@ -162,22 +151,19 @@ st.markdown(
         margin: 5px 0;
     }
     
-    /* Streamlit label coloring */
     [data-testid="stMetricLabel"] {
         color: #cccccc !important;
     }
     
-    /* Make sure form labels are visible */
     label {
         color: #cccccc !important;
     }
     
-    /* Horizontal rule color */
     hr {
         border-color: #333333 !important;
     }
     
-    /* Override for Streamlit components */
+    
     div.stMarkdown p {
         color: #dddddd;
     }
@@ -190,24 +176,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Function to handle form submission
 def handle_submit():
     input_text = st.session_state.user_text
-    
-    # Check if this input has already been processed
     if input_text and input_text != st.session_state.last_processed_input:
-        # Mark this input as processed
         st.session_state.last_processed_input = input_text
-        
-        # Add user message to chat
         st.session_state.messages.append({"role": "user", "content": input_text})
-        
-        # Clear the input field after submission
         st.session_state.user_text = ""
-        
-        # Show typing indicator
         with st.spinner("InfluenceIQ Assistant is thinking..."):
-            # Prepare context for the model
             context = """
             InfluenceIQ is an AI-powered system that ranks who really matters in the digital world.
             
@@ -229,12 +204,10 @@ def handle_submit():
             - Provides value to recruiters, brands, and researchers seeking credible collaborators
             - Offers a dynamic rating system that evolves with changing times
             """
-            
-            # Prepare the prompt with user query and context
+        
             prompt = f"User asked about InfluenceIQ: '{input_text}'\n\nInformation about InfluenceIQ:\n{context}\n\nProvide a helpful, conversational response to the user's query as the InfluenceIQ chatbot. Keep responses concise, informative, and engaging."
             
             try:
-                # Get response from model
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[{"role": "user", "content": prompt}],
@@ -243,25 +216,18 @@ def handle_submit():
                 bot_response = response.choices[0].message.content
             except Exception as e:
                 bot_response = f"I'm sorry, I encountered an error: {str(e)}. Please try again later."
-        
-        # Add bot response to chat
         st.session_state.messages.append({"role": "assistant", "content": bot_response})
 
-# Header (simplified without logo)
 st.markdown("<h1 class='title'>InfluenceIQ</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>The AI-Powered System That Ranks Who Really Matters!</p>", unsafe_allow_html=True)
 
-# Main content container
 st.markdown("<hr style='margin: 0.5rem 0; border-color: #333333;'>", unsafe_allow_html=True)
 
-# Create two columns for chat and metrics
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # Chat container
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
-    
-    # Welcome message if no messages
+
     if not st.session_state.messages:
         st.markdown(
             """
@@ -272,8 +238,7 @@ with col1:
             """, 
             unsafe_allow_html=True
         )
-    
-    # Display chat messages
+
     for message in st.session_state.messages:
         if message["role"] == "user":
             st.markdown(
@@ -285,10 +250,7 @@ with col1:
                 f"<div class='bot-message'><strong>InfluenceIQ Assistant:</strong> {message['content']}</div>", 
                 unsafe_allow_html=True
             )
-    
-    # Chat input with form
     with st.form(key="chat_form", clear_on_submit=True):
-        # Initialize the text input state if it doesn't exist
         if "user_text" not in st.session_state:
             st.session_state.user_text = ""
         
@@ -306,7 +268,6 @@ with col1:
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
-    # Key Metrics section
     st.markdown(
         """
         <div class="metrics-container">
@@ -322,8 +283,7 @@ with col2:
         """, 
         unsafe_allow_html=True
     )
-    
-    # Sample Influence Rating section
+
     st.markdown(
         """
         <div class="metrics-container">
@@ -333,17 +293,12 @@ with col2:
         """, 
         unsafe_allow_html=True
     )
-    
-    # Random data for visualization
+
     if 'random_data' not in st.session_state:
         st.session_state.random_data = [random.randint(60, 95) for _ in range(3)]
-    
-    # Create three metric cards for ratings
     st.markdown('<div style="padding: 0 10px;">', unsafe_allow_html=True)
     
     col_a, col_b, col_c = st.columns(3)
-    
-    # Style the metrics to match PolicyBazaar look but with dark theme
     with col_a:
         st.markdown('<div class="metric-card">', unsafe_allow_html=True)
         st.metric("Credibility", f"{st.session_state.random_data[0]}%", "+5%")
@@ -360,15 +315,13 @@ with col2:
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Generate new rating button
+
     st.button(
         "Generate New Rating", 
         key="new_rating",
         on_click=lambda: setattr(st.session_state, 'random_data', [random.randint(60, 95) for _ in range(3)])
     )
-    
-    # Add a quick tips section
+
     st.markdown(
         """
         <div class="metrics-container">
@@ -383,7 +336,6 @@ with col2:
         unsafe_allow_html=True
     )
 
-# Footer
 st.markdown(
     """
     <div class="footer">
